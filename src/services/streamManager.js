@@ -1,7 +1,8 @@
 const dayjs = require('dayjs');
-const utc = require('dayjs-plugin-utc');
-const tz = require('dayjs-plugin-timezone');
-dayjs.extend(utc); dayjs.extend(tz);
+const utc = require('dayjs/plugin/utc');
+const tz = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(tz);
 
 const Channel = require('../models/Channel');
 const PlaylistItem = require('../models/PlaylistItem');
@@ -10,7 +11,9 @@ const { spawnFFmpeg } = require('./ffmpegService');
 
 const SESSIONS = new Map(); // channelId -> state
 
-function nowWIBStr(){ return dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD HH:mm:ss'); }
+function nowWIBStr(){ 
+  return dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD HH:mm:ss'); 
+}
 
 async function loadPlaylistActive(){
   return await PlaylistItem.findAll({ where:{ isActive:true }, order:[['order','ASC'],['id','ASC']] });
@@ -19,7 +22,10 @@ async function loadPlaylistActive(){
 function setAutoStop(state, minutes){
   clearTimeout(state.stopTimer);
   if (!minutes || minutes <= 0) return;
-  state.stopTimer = setTimeout(()=> stopChannel({ channelId: state.channelId, io: state.io, by:'schedule' }), minutes*60*1000);
+  state.stopTimer = setTimeout(
+    ()=> stopChannel({ channelId: state.channelId, io: state.io, by:'schedule' }), 
+    minutes*60*1000
+  );
 }
 
 async function startChannel({ channelId, io, scheduleId=null, durationMinutes=null }){
@@ -45,7 +51,11 @@ async function startChannel({ channelId, io, scheduleId=null, durationMinutes=nu
     if (state.stopping) return;
     const item = state.items[state.playingIndex];
 
-    await LiveSession.update({ status:'streaming', currentItemId:item.id, message:`Streaming: ${item.title}` }, { where:{ id: state.sessionId }});
+    await LiveSession.update(
+      { status:'streaming', currentItemId:item.id, message:`Streaming: ${item.title}` }, 
+      { where:{ id: state.sessionId }}
+    );
+
     io.emit('session:update', { channelId, status:'streaming', item, at: nowWIBStr() });
 
     const child = spawnFFmpeg({
@@ -77,7 +87,10 @@ async function stopChannel({ channelId, io, by='user' }){
   state.stopping = true;
   clearTimeout(state.stopTimer);
   if (state.child) { try{ state.child.kill('SIGINT'); }catch(e){} }
-  await LiveSession.update({ status:'stopped', stoppedAt:new Date(), message:`Stopped by ${by}` }, { where:{ id: state.sessionId }});
+  await LiveSession.update(
+    { status:'stopped', stoppedAt:new Date(), message:`Stopped by ${by}` }, 
+    { where:{ id: state.sessionId }}
+  );
   SESSIONS.delete(channelId);
   io.emit('session:update', { channelId, status:'stopped', at: nowWIBStr(), by });
   return { ok:true };
