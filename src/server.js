@@ -9,10 +9,10 @@ const socketio = require('socket.io');
 const dotenv = require('dotenv'); dotenv.config();
 
 const { sequelize } = require('./config/sequelize');
-const Channel = require('./models/Channel');
-const PlaylistItem = require('./models/PlaylistItem');
-const LiveSession = require('./models/LiveSession');
-const Schedule = require('./models/Schedule');
+require('./models/Channel');
+require('./models/PlaylistItem');
+require('./models/LiveSession');
+require('./models/Schedule');
 
 const apiRouter = require('./routes/api');
 const { bootScheduler } = require('./scheduler/scheduler');
