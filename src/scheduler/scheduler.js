@@ -1,21 +1,23 @@
 const cron = require('node-cron');
 const dayjs = require('dayjs');
-const utc = require('dayjs-plugin-utc');
-const tz = require('dayjs-plugin-timezone');
-dayjs.extend(utc); dayjs.extend(tz);
+const utc = require('dayjs/plugin/utc');
+const tz = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(tz);
 
 const Schedule = require('../models/Schedule');
 const Channel = require('../models/Channel');
 const { startChannel } = require('../services/streamManager');
 
 function bootScheduler(io){
+  // cek tiap 15 detik
   cron.schedule('*/15 * * * * *', async ()=>{
     const now = dayjs().tz('Asia/Jakarta');
     const nowStr = now.format('YYYY-MM-DD HH:mm:ss');
     const lower = now.subtract(30, 'second');
     const upper = now.add(15, 'second');
 
-    const rows = await Schedule.findAll(); // ringan
+    const rows = await Schedule.findAll();
     for (const s of rows){
       const due = dayjs.tz(s.startAtLocal, 'Asia/Jakarta');
       if (due.isAfter(lower) && due.isBefore(upper)){
