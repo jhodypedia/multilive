@@ -3,26 +3,23 @@ require('dotenv').config();
 
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg';
 
-function spawnFFmpeg({ input, rtmpUrl, vBitrate, aBitrate, resolution, framerate, onLog }) {
-  const args = [
-    '-hide_banner','-loglevel','warning',
-    '-re',
-    ...(input.startsWith('http') ? ['-i', input] : ['-stream_loop','-1','-i', input]),
+function spawnFFmpeg({ input, rtmpUrl, vBitrate, aBitrate, resolution, framerate, loop, onLog }) {
+  const args = ['-hide_banner','-loglevel','warning','-re'];
+  if (!input.startsWith('http') && loop) args.push('-stream_loop','-1');
+  args.push('-i', input);
+
+  args.push(
     '-vf', `scale=${resolution.replace('x',':')},fps=${framerate}`,
     '-c:v','libx264','-preset','veryfast','-tune','zerolatency',
-    '-b:v', vBitrate, '-maxrate', vBitrate, '-bufsize', '2M',
+    '-b:v', vBitrate, '-maxrate', vBitrate, '-bufsize','2M',
     '-pix_fmt','yuv420p','-g', String(framerate*2),
-    '-c:a','aac','-b:a', aBitrate, '-ar','44100','-ac','2',
+    '-c:a','aac','-b:a', aBitrate,'-ar','44100','-ac','2',
     '-f','flv', rtmpUrl
-  ];
+  );
 
-  const child = spawn(FFMPEG, args, { stdio: ['ignore','pipe','pipe'] });
-
-  const log = (d) => onLog && onLog(d.toString().trim());
-  child.stdout.on('data', log);
-  child.stderr.on('data', log);
-  child.on('close', code => log(`[ffmpeg] exit code ${code}`));
-
+  const child = spawn(FFMPEG, args, { stdio:['ignore','pipe','pipe'] });
+  child.stdout.on('data', d=> onLog && onLog(d.toString()));
+  child.stderr.on('data', d=> onLog && onLog(d.toString()));
   return child;
 }
 
