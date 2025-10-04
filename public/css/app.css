@@ -183,17 +183,26 @@ button:active{ transform:translateY(1px) }
 
 .progress-bar {
   width: 100%;
-  height: 10px;
-  background: #e9ecef;
-  border-radius: 6px;
+  height: 14px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
   overflow: hidden;
-  margin: 10px 0;
+  margin-top: 10px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
 }
+
 .progress-bar div {
   height: 100%;
   width: 0%;
-  background: var(--primary);
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+  background-size: 200% 200%;
+  animation: progressStripe 1s linear infinite;
   transition: width .3s ease;
+}
+
+@keyframes progressStripe {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 /* ====== TOASTS ====== */
