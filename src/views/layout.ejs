@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title><%= pageTitle || 'YT Multi Loop' %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remix Icon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+  <!-- CSS -->
+  <link rel="stylesheet" href="/public/css/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><i class="ri-live-line"></i> Multi-Loop YouTube <small>WIB</small></div>
+    <nav class="nav">
+      <button data-page="dashboard"><i class="ri-dashboard-line"></i> Dashboard</button>
+      <button data-page="channels"><i class="ri-tv-2-line"></i> Channels</button>
+      <button data-page="playlist"><i class="ri-movie-2-line"></i> Playlist</button>
+      <button data-page="schedules"><i class="ri-time-line"></i> Schedules</button>
+      <button data-page="logs"><i class="ri-terminal-line"></i> Logs</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="page-dashboard" class="page"></section>
+    <section id="page-channels" class="page hidden"></section>
+    <section id="page-playlist" class="page hidden"></section>
+    <section id="page-schedules" class="page hidden"></section>
+    <section id="page-logs" class="page hidden"></section>
+  </main>
+
+  <footer class="footer">© <%= new Date().getFullYear() %> • Auto-Loop • Timezone: Asia/Jakarta</footer>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/public/js/app.js"></script>
+</body>
+</html>
