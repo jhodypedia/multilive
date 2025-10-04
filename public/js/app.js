@@ -9,8 +9,8 @@
   let loadCount = 0, progTimer=null;
 
   function showLoader(show=true){
-    if(show){ loader.classList.remove('hidden'); }
-    else    { loader.classList.add('hidden'); }
+    if(show) loader.classList.remove('hidden');
+    else loader.classList.add('hidden');
   }
   function startProgress(){
     pageload.style.width = '5%';
@@ -29,10 +29,7 @@
     if(loadCount===0){ showLoader(true); startProgress(); }
     loadCount++;
     try{ return await promise; }
-    finally{ 
-      loadCount--; 
-      if(loadCount<=0){ loadCount=0; showLoader(false); endProgress(); }
-    }
+    finally{ loadCount--; if(loadCount<=0){ loadCount=0; showLoader(false); endProgress(); } }
   }
 
   // ===== Toasts =====
@@ -82,7 +79,8 @@
         <div class="card">${skeleton(220)}</div>
       </div>`;
     const [channels, sessions] = await Promise.all([
-      apiGet('/api/channels'), apiGet('/api/sessions').catch(()=>({data:[]}))
+      apiGet('/api/channels'),
+      apiGet('/api/sessions').catch(()=>({data:[]}))
     ]);
     elPage('dashboard').innerHTML = `
       <div class="grid">
@@ -266,15 +264,16 @@
     });
   }
 
-  // ===== UPLOAD (dengan list file & add to playlist) =====
+  // ===== UPLOAD (AJAX + progress bar) =====
   async function loadUpload(){
     elPage('upload').innerHTML = `
       <div class="card">
         <h2>Upload Video</h2>
         <form id="formUpload">
           <input type="file" name="file" accept="video/*" required />
-          <button class="btn btn-primary ripple">Upload</button>
+          <button type="submit" class="btn btn-primary ripple">Upload</button>
         </form>
+        <div class="progress-bar"><div id="uploadProgress"></div></div>
         <div id="uploadResult"></div>
       </div>
       <div class="card">
@@ -282,13 +281,35 @@
         <div id="uploadList">${skeleton(120)}</div>
       </div>
     `;
-    $('#formUpload').onsubmit = async e=>{
+    $('#formUpload').onsubmit = e=>{
       e.preventDefault();
-      const fd = new FormData(e.target);
-      const r = await fetch('/api/upload',{method:'POST', body:fd});
-      const j = await r.json();
-      if(j.ok){ $('#uploadResult').innerHTML = `<p>Uploaded: <code>${j.file}</code></p>`; toast('Upload berhasil'); loadUploadsList(); }
-      else{ $('#uploadResult').textContent = 'Error: '+j.error; toast('Upload gagal','error'); }
+      const file = e.target.file.files[0];
+      if(!file) return toast('Pilih file dulu','error');
+      const fd = new FormData();
+      fd.append('file', file);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST','/api/upload',true);
+      xhr.upload.onprogress = e=>{
+        if(e.lengthComputable){
+          const percent = Math.round((e.loaded/e.total)*100);
+          $('#uploadProgress').style.width = percent+'%';
+        }
+      };
+      xhr.onload = ()=>{
+        if(xhr.status===200){
+          const j = JSON.parse(xhr.responseText);
+          if(j.ok){
+            $('#uploadResult').innerHTML = `<p>Uploaded: <code>${j.file}</code></p>`;
+            toast('Upload berhasil');
+            $('#uploadProgress').style.width = '0%';
+            loadUploadsList();
+          } else {
+            $('#uploadResult').textContent = 'Error: '+j.error;
+            toast('Upload gagal','error');
+          }
+        }
+      };
+      xhr.send(fd);
     };
     loadUploadsList();
   }
