@@ -1,5 +1,45 @@
-<!-- Konten halaman dimuat via AJAX di app.js -->
+<div class="page-header">
+  <h1><i class="ri-dashboard-line"></i> Dashboard</h1>
+  <p class="text-muted">Monitoring status channel, live session, playlist, dan jadwal.</p>
+</div>
+
+<div class="grid">
+  <!-- Card Channels -->
+  <div class="card">
+    <h2><i class="ri-broadcast-line"></i> Channels</h2>
+    <div id="channelsSummary">
+      <div class="skeleton" style="height:140px"></div>
+    </div>
+  </div>
+
+  <!-- Card Sessions -->
+  <div class="card">
+    <h2><i class="ri-live-line"></i> Sessions</h2>
+    <div id="sessionsSummary">
+      <div class="skeleton" style="height:140px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- Card Playlist -->
+  <div class="card">
+    <h2><i class="ri-play-list-2-line"></i> Playlist</h2>
+    <div id="playlistSummary">
+      <div class="skeleton" style="height:100px"></div>
+    </div>
+  </div>
+
+  <!-- Card Schedules -->
+  <div class="card">
+    <h2><i class="ri-calendar-line"></i> Schedule</h2>
+    <div id="schedulesSummary">
+      <div class="skeleton" style="height:100px"></div>
+    </div>
+  </div>
+</div>
+
 <div class="card">
-  <h2>Selamat datang</h2>
-  <p>Gunakan menu di atas untuk mengelola <b>Channels</b>, <b>Playlist</b>, membuat <b>Schedules</b>, dan memantau <b>Logs</b> secara realtime.</p>
+  <h2><i class="ri-terminal-box-line"></i> Logs</h2>
+  <pre id="logBox" class="log"></pre>
 </div>
