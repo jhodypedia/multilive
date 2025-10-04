@@ -6,113 +6,169 @@ const fs = require('fs');
 const Channel = require('../models/Channel');
 const PlaylistItem = require('../models/PlaylistItem');
 const Schedule = require('../models/Schedule');
-const LiveSession = require('../models/LiveSession');   // ✅ tambahkan model LiveSession
+const LiveSession = require('../models/LiveSession');
 const { startChannel, stopChannel } = require('../services/streamManager');
 
 const router = express.Router();
 
 // === Upload Setup ===
-const uploadDir = path.join(__dirname,'..','..','uploads');
-if(!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+const uploadDir = path.join(__dirname, '..', 'uploads'); // folder di PROJECT_ROOT/uploads
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: uploadDir,
-  filename: (req,f,cb)=> cb(null, Date.now()+'-'+f.originalname.replace(/\s+/g,'_'))
+  filename: (req, f, cb) => cb(null, Date.now() + '-' + f.originalname.replace(/\s+/g, '_'))
 });
 const upload = multer({ storage });
 
 // === Upload File API ===
-// === Upload File API ===
-router.post('/upload', upload.single('file'), (req,res)=>{
+router.post('/upload', upload.single('file'), (req, res) => {
   try {
-    if(!req.file) return res.status(400).json({ ok:false, error:'No file uploaded' });
-    console.log("Uploaded file:", req.file);
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: 'No file uploaded' });
+    }
     res.json({
-      ok:true,
-      file:'/uploads/'+req.file.filename,
-      original:req.file.originalname
+      ok: true,
+      file: '/uploads/' + req.file.filename,
+      original: req.file.originalname
     });
   } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).json({ ok:false, error:err.message });
+    console.error('Upload error:', err);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
 // === List All Uploaded Files API ===
-router.get('/uploads', (req,res)=>{
-  fs.readdir(uploadDir, (err, files)=>{
-    if(err) return res.json({ ok:false, error:err.message });
-    const list = files.map(f=>({
+router.get('/uploads', (req, res) => {
+  fs.readdir(uploadDir, (err, files) => {
+    if (err) return res.json({ ok: false, error: err.message });
+    const list = files.map(f => ({
       name: f,
-      url: '/uploads/'+f
+      url: '/uploads/' + f
     }));
-    res.json({ ok:true, files:list });
+    res.json({ ok: true, files: list });
   });
 });
 
 // === Channels CRUD ===
-router.get('/channels', async(req,res)=> 
-  res.json({ok:true, data:await Channel.findAll()})
-);
-
-router.post('/channels', async(req,res)=> 
-  res.json({ok:true, data:await Channel.create(req.body)})
-);
-
-router.delete('/channels/:id', async(req,res)=>{
-  await Channel.destroy({where:{id:req.params.id}});
-  res.json({ok:true});
+router.get('/channels', async (req, res) => {
+  try {
+    const data = await Channel.findAll();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
-
-router.post('/channels/:id/start', async(req,res)=>{ 
-  try{ 
-    await startChannel({channelId:req.params.id, io:req.app.get('io')}); 
-    res.json({ok:true}); 
-  }catch(e){ 
-    res.json({ok:false,error:e.message}); 
-  } 
+router.post('/channels', async (req, res) => {
+  try {
+    const data = await Channel.create(req.body);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
-
-router.post('/channels/:id/stop', async(req,res)=>{ 
-  await stopChannel({channelId:req.params.id, io:req.app.get('io')}); 
-  res.json({ok:true}); 
+router.delete('/channels/:id', async (req, res) => {
+  try {
+    await Channel.destroy({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.post('/channels/:id/start', async (req, res) => {
+  try {
+    await startChannel({ channelId: req.params.id, io: req.app.get('io') });
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+router.post('/channels/:id/stop', async (req, res) => {
+  try {
+    await stopChannel({ channelId: req.params.id, io: req.app.get('io') });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // === Playlist CRUD ===
-router.get('/playlist', async(req,res)=> 
-  res.json({ok:true, data:await PlaylistItem.findAll()})
-);
-
-router.post('/playlist', async(req,res)=> 
-  res.json({ok:true, data:await PlaylistItem.create(req.body)})
-);
-
-router.delete('/playlist/:id', async(req,res)=>{
-  await PlaylistItem.destroy({where:{id:req.params.id}});
-  res.json({ok:true});
+router.get('/playlist', async (req, res) => {
+  try {
+    const data = await PlaylistItem.findAll();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.post('/playlist', async (req, res) => {
+  try {
+    const data = await PlaylistItem.create(req.body);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.delete('/playlist/:id', async (req, res) => {
+  try {
+    await PlaylistItem.destroy({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // === Schedules CRUD ===
-router.get('/schedules', async(req,res)=> 
-  res.json({ok:true, data:await Schedule.findAll()})
-);
-
-router.post('/schedules', async(req,res)=> 
-  res.json({ok:true, data:await Schedule.create(req.body)})
-);
-
-router.delete('/schedules/:id', async(req,res)=>{
-  await Schedule.destroy({where:{id:req.params.id}});
-  res.json({ok:true});
+router.get('/schedules', async (req, res) => {
+  try {
+    const data = await Schedule.findAll();
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.post('/schedules', async (req, res) => {
+  try {
+    const data = await Schedule.create(req.body);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.delete('/schedules/:id', async (req, res) => {
+  try {
+    await Schedule.destroy({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
-// === Sessions list (untuk dashboard) ===
-router.get('/sessions', async(req,res)=>{
-  const sessions = await LiveSession.findAll({
-    order:[['id','DESC']],
-    limit:20
-  });
-  res.json({ ok:true, data:sessions });
+// === Sessions CRUD ===
+router.get('/sessions', async (req, res) => {
+  try {
+    const sessions = await LiveSession.findAll({ order: [['createdAt', 'DESC']] });
+    res.json({ ok: true, data: sessions });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.get('/sessions/:id', async (req, res) => {
+  try {
+    const session = await LiveSession.findByPk(req.params.id);
+    if (!session) return res.status(404).json({ ok: false, error: 'Session not found' });
+    res.json({ ok: true, data: session });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+router.delete('/sessions/:id', async (req, res) => {
+  try {
+    await LiveSession.destroy({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 module.exports = router;
