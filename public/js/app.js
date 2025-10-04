@@ -42,7 +42,7 @@
     setTimeout(()=> node.remove(), 3500);
   }
 
-  // ===== NAV dropdown (mobile) =====
+  // ===== NAV dropdown =====
   const navToggle = $('#navToggle');
   const navMenu = $('#navMenu');
   navToggle.addEventListener('click', ()=> navMenu.classList.toggle('show'));
@@ -264,8 +264,8 @@
     });
   }
 
-  // ===== UPLOAD (AJAX + progress bar + cancel) =====
-  let currentXhr = null;
+  // ===== UPLOAD (AJAX + progress bar) =====
+  let currentXhr=null;
   async function loadUpload(){
     elPage('upload').innerHTML = `
       <div class="card">
@@ -273,7 +273,7 @@
         <form id="formUpload">
           <input type="file" name="file" accept="video/*" required />
           <button type="submit" class="btn btn-primary ripple">Upload</button>
-          <button type="button" id="btnCancel" class="btn btn-danger ripple" disabled>Batal</button>
+          <button type="button" id="btnCancel" class="btn btn-danger ripple hidden">Batal</button>
         </form>
         <div class="progress-bar"><div id="uploadProgress"></div></div>
         <div id="uploadResult"></div>
@@ -290,23 +290,24 @@
       const fd = new FormData();
       fd.append('file', file);
       const xhr = new XMLHttpRequest();
-      currentXhr = xhr;
+      currentXhr=xhr;
       xhr.open('POST','/api/upload',true);
+
+      $('#btnCancel').classList.remove('hidden');
+      $('#btnCancel').onclick = ()=>{ xhr.abort(); $('#btnCancel').classList.add('hidden'); toast('Upload dibatalkan','warn'); };
 
       xhr.upload.onprogress = e=>{
         if(e.lengthComputable){
           const percent = Math.round((e.loaded/e.total)*100);
-          const bar = $('#uploadProgress');
-          bar.style.width = percent+'%';
-          bar.style.background = percent<50 ? 'var(--primary)' : percent<80 ? 'orange' : 'limegreen';
+          $('#uploadProgress').style.width = percent+'%';
+          $('#uploadProgress').style.background = percent<100 ? '#ff9800' : '#4caf50';
         }
       };
-
       xhr.onload = ()=>{
-        $('#btnCancel').disabled = true;
-        currentXhr = null;
+        $('#btnCancel').classList.add('hidden');
         if(xhr.status===200){
-          const j = JSON.parse(xhr.responseText);
+          let j;
+          try{ j = JSON.parse(xhr.responseText); }catch(e){ toast('Upload gagal (response error)','error'); return; }
           if(j.ok){
             $('#uploadResult').innerHTML = `<p>Uploaded: <code>${j.file}</code></p>`;
             toast('Upload berhasil');
@@ -316,28 +317,18 @@
             $('#uploadResult').textContent = 'Error: '+j.error;
             toast('Upload gagal','error');
           }
+        } else {
+          toast('Upload gagal (server)','error');
         }
       };
-
-      $('#btnCancel').disabled = false;
-      $('#btnCancel').onclick = ()=>{
-        if(currentXhr){
-          currentXhr.abort();
-          currentXhr = null;
-          $('#uploadProgress').style.width = '0%';
-          $('#btnCancel').disabled = true;
-          toast('Upload dibatalkan','warn');
-        }
-      };
-
+      xhr.onerror = ()=>{ toast('Upload error jaringan','error'); };
       xhr.send(fd);
     };
     loadUploadsList();
   }
-
   async function loadUploadsList(){
     const r = await fetch('/api/uploads'); 
-    const j = await r.json();
+    const j = await r.json().catch(()=>({ok:false}));
     if(j.ok){
       $('#uploadList').innerHTML = `
         <table class="table">
@@ -347,19 +338,14 @@
               <td>${f.name}</td>
               <td class="mono">${f.url}</td>
               <td>
-                <button class="btn btn-outline ripple" onclick="navigator.clipboard.writeText('${f.url}');toast('Copied!')">
-                  <i class="ri-file-copy-line"></i>
-                </button>
-                <button class="btn btn-primary ripple" onclick="addToPlaylist('${f.url}','${f.name}')">
-                  <i class="ri-add-line"></i> Playlist
-                </button>
+                <button class="btn btn-outline ripple" onclick="navigator.clipboard.writeText('${f.url}');toast('Copied!')"><i class="ri-file-copy-line"></i></button>
+                <button class="btn btn-primary ripple" onclick="addToPlaylist('${f.url}','${f.name}')"><i class="ri-add-line"></i> Playlist</button>
               </td>
             </tr>`).join('')}
         </table>
       `;
     }
   }
-
   window.addToPlaylist = async function(url,name){
     await api('/api/playlist','POST',{ title:name, source:url, order:0, loop:true, isActive:true });
     toast(`Ditambah ke Playlist: ${name}`);
